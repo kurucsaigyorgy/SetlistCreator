@@ -1,65 +1,106 @@
-const express = require('express');
-//const fetch = require('node-fetch'); // Use node-fetch for server-side HTTP requests
-const crypto = require('crypto');
-const querystring = require('querystring');
+
 require('dotenv').config();
+const SpotifyWebApi = require('spotify-web-api-node');
+const express = require('express');
 
 const app = express();
-const port = 8080;
 
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
-const redirectUri = 'http://localhost:8080';
-const authorizationEndpoint = 'https://accounts.spotify.com/authorize';
-const tokenEndpoint = 'https://accounts.spotify.com/api/token';
+const PORT = process.env.PORT;
 
-app.use(express.static('public')); // Serve static files
+app.set('view engine', 'ejs');
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static('public'));
+
+const scopes = [
+    'ugc-image-upload',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'user-read-currently-playing',
+    'streaming',
+    'app-remote-control',
+    'user-read-email',
+    'user-read-private',
+    'playlist-read-collaborative',
+    'playlist-modify-public',
+    'playlist-read-private',
+    'playlist-modify-private',
+    'user-library-modify',
+    'user-library-read',
+    'user-top-read',
+    'user-read-playback-position',
+    'user-read-recently-played',
+    'user-follow-read',
+    'user-follow-modify'
+];
+
+const spotifyApi = new SpotifyWebApi({
+    redirectUri: `http://localhost:${PORT}/callback`,
+    clientId: clientId,
+    clientSecret: clientSecret,
+});
+
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+app.get('/me', (req, res) => {
+    res.render('me');
+});
 
 app.get('/login', (req, res) => {
-    const { code_challenge } = req.query;
-    const code_verifier = crypto.randomBytes(32).toString('hex');
-    res.cookie('code_verifier', code_verifier);
-
-    const authUrl = new URL(authorizationEndpoint);
-    authUrl.search = new URLSearchParams({
-        response_type: 'code',
-        client_id: clientId,
-        scope: 'user-read-private user-read-email',
-        code_challenge_method: 'S256',
-        code_challenge,
-        redirect_uri: redirectUri,
-    }).toString();
-
-    res.redirect(authUrl.toString());
+    res.redirect(spotifyApi.createAuthorizeURL(scopes));
 });
 
-app.post('/refresh-token', async (req, res) => {
-    const { refresh_token } = req.body;
-    const response = await fetch(tokenEndpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: querystring.stringify({
-            grant_type: 'refresh_token',
-            refresh_token,
-            client_id: clientId,
-            client_secret: clientSecret,
-        }),
-    });
-    const tokenData = await response.json();
-    res.json(tokenData);
+app.get('/callback', (req, res) => {
+    const error = req.query.error;
+    const code = req.query.code;
+    const state = req.query.state;
+
+    if (error) {
+        console.error('Callback Error:', error);
+        res.send(`Callback Error: ${error}`);
+        return;
+    }
+
+    spotifyApi
+        .authorizationCodeGrant(code)
+        .then(data => {
+            const access_token = data.body['access_token'];
+            const refresh_token = data.body['refresh_token'];
+            const expires_in = data.body['expires_in'];
+
+            spotifyApi.setAccessToken(access_token);
+            spotifyApi.setRefreshToken(refresh_token);
+
+            console.log('access_token:', access_token);
+            console.log('refresh_token:', refresh_token);
+
+            console.log(
+                `Sucessfully retreived access token. Expires in ${expires_in} s.`
+            );
+            res.send('Success! You can now close the window.');
+
+            setInterval(async () => {
+                const data = await spotifyApi.refreshAccessToken();
+                const access_token = data.body['access_token'];
+
+                console.log('The access token has been refreshed!');
+                console.log('access_token:', access_token);
+                spotifyApi.setAccessToken(access_token);
+            }, expires_in / 2 * 1000);
+        })
+        .catch(error => {
+            console.error('Error getting Tokens:', error);
+            res.send(`Error getting Tokens: ${error}`);
+        });
 });
 
-app.get('/me', async (req, res) => {
-    const { access_token } = req.headers;
-    const response = await fetch('https://api.spotify.com/v1/me', {
-        headers: { 'Authorization': `Bearer ${access_token}` },
-    });
-    const userData = await response.json();
-    res.json(userData);
-});
+app.listen(8080, () =>
+    console.log(
+        `HTTP Server up. Now go to http://localhost:${PORT}/ in your browser.`
+    )
+);
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
