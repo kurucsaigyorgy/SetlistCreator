@@ -12,6 +12,7 @@ const app = express();
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const PORT = process.env.PORT;
+const spotifySearchEndpoint = 'https://api.spotify.com/v1/search';
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -67,6 +68,35 @@ app.get('/me', (req, res) => {
     res.render('me');
 });
 
+app.get('/search-page', (req, res) => {
+    res.render('search_page');
+});
+
+app.get('/search', async (req, res) => {
+    const query = req.query.query
+
+    try {
+        const response = await fetch(`${spotifySearchEndpoint}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        })
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        console.log(data);
+
+        res.send(data);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
 
 app.get('/callback', (req, res) => {
     const error = req.query.error;
@@ -85,10 +115,10 @@ app.get('/callback', (req, res) => {
             const access_token = data.body['access_token'];
             const refresh_token = data.body['refresh_token'];
             const expires_in = data.body['expires_in'];
-            accessToken = access_token;
 
             spotifyApi.setAccessToken(access_token);
             spotifyApi.setRefreshToken(refresh_token);
+            accessToken = access_token;
 
             console.log('access_token:', access_token);
             console.log('refresh_token:', refresh_token);

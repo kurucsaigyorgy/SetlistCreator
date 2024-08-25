@@ -18,7 +18,7 @@ async function fetchUserData() {
 };
 
 function createAboutMePage(data) {
-   const container = document.getElementById('container');
+   const container = document.getElementById('about-me-container');
    createHTMLElement('div', 'User name: ', data.display_name, container, 'user-name');
    createHTMLElement('div', 'Country: ', data.country, container, 'country');
    createHTMLElement('div', 'Email: ', data.email, container, 'email');

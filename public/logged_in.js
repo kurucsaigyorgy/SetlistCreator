@@ -3,7 +3,7 @@ aboutMeBtn.addEventListener("click", () => {
    redirect('http://localhost:8080/me');
 });
 const searchBtn = document.getElementById('search');
-searchArtistBtn.addEventListener("click", () => {
+searchBtn.addEventListener("click", () => {
    redirect('http://localhost:8080/search-page');
 });
 
