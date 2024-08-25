@@ -2,6 +2,10 @@
 require('dotenv').config();
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+let accessToken = null;
 
 const app = express();
 
@@ -46,13 +50,23 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 
+app.get('/login', (req, res) => {
+    res.redirect(spotifyApi.createAuthorizeURL(scopes));
+});
+
+app.get('/logged-in', (req, res) => {
+    res.render('logged_in');
+});
+
+app.get('/userinfo', async (req, res) => {
+    const me = await spotifyApi.getMe();
+    res.send(me);
+});
+
 app.get('/me', (req, res) => {
     res.render('me');
 });
 
-app.get('/login', (req, res) => {
-    res.redirect(spotifyApi.createAuthorizeURL(scopes));
-});
 
 app.get('/callback', (req, res) => {
     const error = req.query.error;
@@ -71,6 +85,7 @@ app.get('/callback', (req, res) => {
             const access_token = data.body['access_token'];
             const refresh_token = data.body['refresh_token'];
             const expires_in = data.body['expires_in'];
+            accessToken = access_token;
 
             spotifyApi.setAccessToken(access_token);
             spotifyApi.setRefreshToken(refresh_token);
@@ -81,7 +96,6 @@ app.get('/callback', (req, res) => {
             console.log(
                 `Sucessfully retreived access token. Expires in ${expires_in} s.`
             );
-            res.send('Success! You can now close the window.');
 
             setInterval(async () => {
                 const data = await spotifyApi.refreshAccessToken();
@@ -91,6 +105,8 @@ app.get('/callback', (req, res) => {
                 console.log('access_token:', access_token);
                 spotifyApi.setAccessToken(access_token);
             }, expires_in / 2 * 1000);
+
+            res.redirect('/logged-in');
         })
         .catch(error => {
             console.error('Error getting Tokens:', error);
