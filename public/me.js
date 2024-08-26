@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function fetchUserData() {
    try {
-      const response = await fetch('http://localhost:8080/userinfo');
+      const response = await fetch('/userinfo');
       if (!response.ok) {
          throw new Error(`HTTP error! Status: ${response.status}`)
       }

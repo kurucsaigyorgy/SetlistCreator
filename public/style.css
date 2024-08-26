@@ -1,0 +1,41 @@
+#search-result-container {
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   grid-gap: 1em;
+   align-items: center;
+   justify-items: center;
+
+}
+
+#search-result-container>div {
+   display: grid;
+   margin: 1em;
+   padding: 1em;
+   border: 2px solid #333;
+}
+#search-result-container>div>div, a {
+   font-size: 16px;
+}
+
+#search-result-container>div>button {
+   padding: 8px 16px; 
+  font-size: 16px;   
+  line-height: 1.2;  
+  border: 2px solid #ccc;
+  background-color: #f0f0f0; 
+  color: #333;       
+  border-radius: 4px; 
+  cursor: pointer;    
+  display: inline-block; 
+  justify-self: center;
+  align-self: center;
+}
+
+
+
+#search-form {
+   margin: auto; 
+   text-align: center;
+   align-self: center;
+   padding: 1em;
+}

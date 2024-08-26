@@ -88,8 +88,6 @@ app.get('/search', async (req, res) => {
         }
 
         const data = await response.json();
-        console.log(data);
-
         res.send(data);
 
     } catch (error) {
