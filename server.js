@@ -12,7 +12,8 @@ const app = express();
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const PORT = process.env.PORT;
-const spotifySearchEndpoint = 'https://api.spotify.com/v1/search';
+const spotifyAPIRoot = 'https://api.spotify.com/v1/search';
+const musicBrainsAPIRoot = 'https://musicbrainz.org/ws/2/';
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -59,7 +60,7 @@ app.get('/logged-in', (req, res) => {
     res.render('logged_in');
 });
 
-app.get('/userinfo', async (req, res) => {
+app.get('/api/me', async (req, res) => {
     const me = await spotifyApi.getMe();
     res.send(me);
 });
@@ -68,15 +69,15 @@ app.get('/me', (req, res) => {
     res.render('me');
 });
 
-app.get('/search-page', (req, res) => {
+app.get('/search', (req, res) => {
     res.render('search_page');
 });
 
-app.get('/search', async (req, res) => {
+app.get('/api/search', async (req, res) => {
     const query = req.query.query
 
     try {
-        const response = await fetch(`${spotifySearchEndpoint}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
+        const response = await fetch(`${spotifyAPIRoot}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`
@@ -89,6 +90,37 @@ app.get('/search', async (req, res) => {
 
         const data = await response.json();
         res.send(data);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
+
+app.get('/setlists', (req, res) => {
+    res.render('setlists');
+});
+
+app.get('/api/mbid', async (req, res) => {
+    const artist = req.query.artist;
+
+    try {
+        const query = `artist:${artist}`;
+        const response = await fetch(`${musicBrainsAPIRoot}artist/?query=${query}&limit=1&fmt=json`, {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'SetList Creator/1.0 (kurucsai.gyorgy@gmail.com)',
+                'Content-Type': 'application/json',
+            }
+        })
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        const mbid = data.artists[0].id;
+        res.json(mbid);
 
     } catch (error) {
         console.error('Error fetching data from external API', error);

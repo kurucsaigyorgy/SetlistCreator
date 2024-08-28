@@ -6,34 +6,36 @@
 }
 
 button {
-   padding: 8px 16px; 
-   font-size: 20px;   
-   line-height: 1.2;  
-   border: 3px solid #ccc; 
-   background-color: #f0f0f0; 
-   color: #333;        
-   border-radius: 10px; 
-   cursor: pointer;    
-   display: inline-block; 
+   padding: 8px 16px;
+   font-size: 20px;
+   line-height: 1.2;
+   border: 3px solid #ccc;
+   background-color: #f0f0f0;
+   color: #333;
+   border-radius: 10px;
+   cursor: pointer;
+   display: inline-block;
    width: auto;
    align-self: center;
    justify-self: center;
 }
 
 button:focus {
-   outline: none; /* Removes the default outline when the button is focused */
- }
- 
+   outline: none;
+   /* Removes the default outline when the button is focused */
+}
+
 button:hover {
-   background-color: #ddd; /* Changes background color on hover */
- }
+   background-color: #ddd;
+   /* Changes background color on hover */
+}
 
 input {
    background-color: whitesmoke;
    border-radius: 10px;
 }
 
-img{
+img {
    background-color: whitesmoke;
    justify-self: center;
    width: 250px;
@@ -47,6 +49,7 @@ h1 {
    margin-bottom: 20px;
    font-size: 50px;
 }
+
 #about-me-container>div:hover {
    background-color: whitesmoke;
    display: inline-block;
@@ -84,4 +87,16 @@ a {
    text-align: center;
    align-self: center;
    padding: 1em;
+}
+
+#search-page-note {
+   color: red;
+}
+
+.hide {
+   visibility: hidden;
+}
+
+.show {
+   visibility: visible;
 }

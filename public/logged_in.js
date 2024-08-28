@@ -4,7 +4,7 @@ aboutMeBtn.addEventListener("click", () => {
 });
 const searchBtn = document.getElementById('search');
 searchBtn.addEventListener("click", () => {
-   redirect('http://localhost:8080/search-page');
+   redirect('http://localhost:8080/search');
 });
 
 function redirect(URI) {
