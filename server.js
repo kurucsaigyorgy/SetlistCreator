@@ -12,8 +12,11 @@ const app = express();
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const PORT = process.env.PORT;
+const setlistAPIKey = process.env.SETLIST_API_KEY;
+
 const spotifyAPIRoot = 'https://api.spotify.com/v1/search';
 const musicBrainsAPIRoot = 'https://musicbrainz.org/ws/2/';
+const setlistAPIRoot = 'https://api.setlist.fm/rest/1.0/artist/';
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -101,6 +104,34 @@ app.get('/setlists', (req, res) => {
     res.render('setlists');
 });
 
+app.get('/api/setlists', async (req, res) => {
+    const mbid = req.query.mbid;
+
+    try {
+        const response = await fetch(`${setlistAPIRoot}${mbid}/setlists?&page=1`, {
+            headers: {
+                'x-api-key': `${setlistAPIKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        res.send(data);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+
+
+
+});
+
 app.get('/api/mbid', async (req, res) => {
     const artist = req.query.artist;
 
@@ -112,7 +143,7 @@ app.get('/api/mbid', async (req, res) => {
                 'User-Agent': 'SetList Creator/1.0 (kurucsai.gyorgy@gmail.com)',
                 'Content-Type': 'application/json',
             }
-        })
+        });
 
         if (!response.ok) {
             throw new Error('External API response was not ok.')

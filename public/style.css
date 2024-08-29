@@ -42,7 +42,7 @@ img {
    height: 250px;
 }
 
-h1 {
+h1, span {
    font-family: Arial, sans-serif;
    color: #333;
    text-align: center;
