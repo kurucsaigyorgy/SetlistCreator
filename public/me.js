@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
    const userData = await fetchUserData();
+   console.log(userData);
+   
    createAboutMePage(userData.body);
 });
 

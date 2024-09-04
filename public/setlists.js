@@ -48,7 +48,8 @@ const renderSetlists = (data) => {
       const setlistID = set.id;
       const city = set.venue.city.name;
       const venue = set.venue.name;
-      const date = set.eventDate
+      const date = set.eventDate;
+      const artist = set.artist.name;
 
       const setlistDiv = document.createElement('div');
       setlistDiv.textContent = `${i + 1}. ${city} - ${venue} - ${date}`;
@@ -57,7 +58,7 @@ const renderSetlists = (data) => {
       container.appendChild(setlistDiv);
 
       setlistDiv.addEventListener('click', (event) => {
-            location.href = `http://localhost:8080/setlist-details?setlistmbid=${setlistID}&city=${city}&venue=${venue}&date=${date}`;
+            location.href = `http://localhost:8080/setlist-details?setlistmbid=${setlistID}&artist=${artist}&city=${city}&venue=${venue}&date=${date}`;
       });
 
    }

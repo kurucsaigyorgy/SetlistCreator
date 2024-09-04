@@ -14,7 +14,9 @@ const clientSecret = process.env.CLIENT_SECRET;
 const PORT = process.env.PORT;
 const setlistAPIKey = process.env.SETLIST_API_KEY;
 
-const spotifyAPIRoot = 'https://api.spotify.com/v1/search';
+const spotifyAPISearchRoot = 'https://api.spotify.com/v1/search';
+const spotifyAPIUsersRoute = 'https://api.spotify.com/v1/users';
+const spotifyAPIPlaylistRoute = 'https://api.spotify.com/v1/playlists';
 const musicBrainsAPIRoot = 'https://musicbrainz.org/ws/2/';
 const setlistAPIArtistRoot = 'https://api.setlist.fm/rest/1.0/artist/';
 const setlistAPISetlistRoot = 'https://api.setlist.fm/rest/1.0/setlist/';
@@ -81,7 +83,7 @@ app.get('/api/search', async (req, res) => {
     const query = req.query.query
 
     try {
-        const response = await fetch(`${spotifyAPIRoot}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
+        const response = await fetch(`${spotifyAPISearchRoot}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`
@@ -122,7 +124,7 @@ app.get('/api/setlists', async (req, res) => {
         }
 
         const data = await response.json();
-        res.send(data);
+        res.json(data);
 
     } catch (error) {
         console.error('Error fetching data from external API', error);
@@ -179,6 +181,94 @@ app.get('/api/mbid', async (req, res) => {
         const data = await response.json();
         const mbid = data.artists[0].id;
         res.json(mbid);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
+
+app.post('/api/create-playlist', async (req, res) => {
+    const id = req.query.id;
+    const name = req.query.title;
+
+    try {
+        const response = await fetch(`${spotifyAPIUsersRoute}/${id}/playlists`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                'name': `${name}`,
+                'description': `Songs of the event: ${name}`,
+                'public': false,
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        const playlistID = data.id;
+        res.json(playlistID);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
+
+app.get('/api/find-song-id', async (req, res) => {
+    const songName = req.query.songName;
+    const artist = req.query.artist;
+    const query = `track:${songName} artist:${artist}`
+
+    try {
+        const response = await fetch(`${spotifyAPISearchRoot}?query=${query}&type=track&limit=1`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        res.json(data);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
+});
+
+app.post('/api/add-songs-to-playlist', async (req, res) => {
+    const trackUri = req.query.uri;
+    const playlistID = req.query.playlistID;
+
+    try {
+        const response = await fetch(`${spotifyAPIPlaylistRoute}/${playlistID}/tracks`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                uris: [trackUri]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        res.json(data);
 
     } catch (error) {
         console.error('Error fetching data from external API', error);
