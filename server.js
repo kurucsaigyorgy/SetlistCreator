@@ -16,7 +16,8 @@ const setlistAPIKey = process.env.SETLIST_API_KEY;
 
 const spotifyAPIRoot = 'https://api.spotify.com/v1/search';
 const musicBrainsAPIRoot = 'https://musicbrainz.org/ws/2/';
-const setlistAPIRoot = 'https://api.setlist.fm/rest/1.0/artist/';
+const setlistAPIArtistRoot = 'https://api.setlist.fm/rest/1.0/artist/';
+const setlistAPISetlistRoot = 'https://api.setlist.fm/rest/1.0/setlist/';
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -105,10 +106,10 @@ app.get('/setlists', (req, res) => {
 });
 
 app.get('/api/setlists', async (req, res) => {
-    const mbid = req.query.mbid;
+    const artistMBID = req.query.mbid;
 
     try {
-        const response = await fetch(`${setlistAPIRoot}${mbid}/setlists?&page=1`, {
+        const response = await fetch(`${setlistAPIArtistRoot}${artistMBID}/setlists?&page=1`, {
             headers: {
                 'x-api-key': `${setlistAPIKey}`,
                 'Content-Type': 'application/json',
@@ -127,9 +128,35 @@ app.get('/api/setlists', async (req, res) => {
         console.error('Error fetching data from external API', error);
         res.status(500).json({ error: 'Failed to fetch data' });
     }
+});
 
+app.get('/setlist-details', (req, res) => {
+    res.render('setlist_details');
+});
 
+app.get('/api/setlist-details', async (req, res) => {
+    const setlistMBID = req.query.setlistmbid;
 
+    try {
+        const response = await fetch(`${setlistAPISetlistRoot}${setlistMBID}`, {
+            headers: {
+                'x-api-key': `${setlistAPIKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('External API response was not ok.')
+        }
+
+        const data = await response.json();
+        res.send(data);
+
+    } catch (error) {
+        console.error('Error fetching data from external API', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
+    }
 });
 
 app.get('/api/mbid', async (req, res) => {
