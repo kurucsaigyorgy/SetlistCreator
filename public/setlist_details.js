@@ -60,7 +60,7 @@ const createSpotifyPlaylist = async (setlist, title) => {
    const playlistID = await response.json();
    const songURIs = await findSpotifySongIDs(setlist);
    console.log(songURIs);
-   
+
    addSongsToPlaylist(songURIs, playlistID);
 };
 
@@ -84,28 +84,45 @@ const findSpotifySongIDs = async (setlist) => {
    const songs = setlist.sets.set[0].song;
    const artist = setlist.artist.name;
 
-   for (const song of songs) {
-      if (!song.name) { return }
+   for (let i = 0; i < songs.length; i++) {
+      const song = songs[i];
+      if (song.name === '') { continue }
 
-      const response = await fetch(`/api/find-song-id?songName=${song.name}&artist=${artist}`);
-      const data = await response.json();
+      await (async function () {
+         await new Promise(resolve => setTimeout(resolve, 100));
 
-      if (data.tracks.items.length === 0) { continue };
-      const uri = `spotify:track:${data.tracks.items[0].id}`;
-      spotifySongURIArray.push(uri);
+         try {
+            const response = await fetch(`/api/find-song-id?songName=${song.name}&artist=${artist}`);
+            const data = await response.json();
+
+            if (data.tracks.items.length === 0) { return };
+            const uri = `spotify:track:${data.tracks.items[0].id}`;
+            spotifySongURIArray.push(uri);
+
+         } catch (error) {
+            console.error('Error fetching Spotify ID:', error);
+         }
+      })();
    };
 
    return spotifySongURIArray;
 };
 
 const addSongsToPlaylist = async (songURIArray, playlistID) => {
-   songURIArray.forEach( async uri => {
-      const response = await fetch(`/api/add-songs-to-playlist?uri=${uri}&playlistID=${playlistID}`, {
-         method: 'POST',
-      });
-      const data = await response.json();
-      console.log(data);
-      
-   });
-   
+   for (let i = 0; i < songURIArray.length; i++) {
+      const uri = songURIArray[i];
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+         const response = await fetch(`/api/add-songs-to-playlist?uri=${uri}&playlistID=${playlistID}`, {
+            method: 'POST',
+         });
+
+         const data = await response.json();
+         console.log(data);
+
+      } catch (error) {
+         console.error('Error adding song to playlist:', error);
+      }
+   }
 };

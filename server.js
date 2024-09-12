@@ -4,8 +4,7 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-
-let accessToken = null;
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
@@ -25,6 +24,7 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use(cookieParser());
 
 const scopes = [
     'ugc-image-upload',
@@ -81,6 +81,7 @@ app.get('/search', (req, res) => {
 
 app.get('/api/search', async (req, res) => {
     const query = req.query.query
+    const accessToken = req.cookies.token;
 
     try {
         const response = await fetch(`${spotifyAPISearchRoot}?q=${query}&type=artist&limit=10&market=HU&offset=0`, {
@@ -191,6 +192,7 @@ app.get('/api/mbid', async (req, res) => {
 app.post('/api/create-playlist', async (req, res) => {
     const id = req.query.id;
     const name = req.query.title;
+    const accessToken = req.cookies.token;
 
     try {
         const response = await fetch(`${spotifyAPIUsersRoute}/${id}/playlists`, {
@@ -223,7 +225,8 @@ app.post('/api/create-playlist', async (req, res) => {
 app.get('/api/find-song-id', async (req, res) => {
     const songName = req.query.songName;
     const artist = req.query.artist;
-    const query = `track:${songName} artist:${artist}`
+    const query = `track:${songName} artist:${artist}`;
+    const accessToken = req.cookies.token;
 
     try {
         const response = await fetch(`${spotifyAPISearchRoot}?query=${query}&type=track&limit=1`, {
@@ -250,6 +253,7 @@ app.get('/api/find-song-id', async (req, res) => {
 app.post('/api/add-songs-to-playlist', async (req, res) => {
     const trackUri = req.query.uri;
     const playlistID = req.query.playlistID;
+    const accessToken = req.cookies.token;
 
     try {
         const response = await fetch(`${spotifyAPIPlaylistRoute}/${playlistID}/tracks`, {
@@ -296,14 +300,18 @@ app.get('/callback', (req, res) => {
 
             spotifyApi.setAccessToken(access_token);
             spotifyApi.setRefreshToken(refresh_token);
-            accessToken = access_token;
+            
+            const options = {
+                httpOnly: true,
+                // expires: new Date(Date.now() + process.env.EXPIRE_TOKEN),
+            }
+
+            setTokenInCookies(access_token, res, options);
 
             console.log('access_token:', access_token);
             console.log('refresh_token:', refresh_token);
 
-            console.log(
-                `Sucessfully retreived access token. Expires in ${expires_in} s.`
-            );
+            console.log(`Sucessfully retreived access token. Expires in ${expires_in} s.`);
 
             setInterval(async () => {
                 const data = await spotifyApi.refreshAccessToken();
@@ -312,6 +320,7 @@ app.get('/callback', (req, res) => {
                 console.log('The access token has been refreshed!');
                 console.log('access_token:', access_token);
                 spotifyApi.setAccessToken(access_token);
+                setTokenInCookies(access_token, res, options);
             }, expires_in / 2 * 1000);
 
             res.redirect('/logged-in');
@@ -321,6 +330,12 @@ app.get('/callback', (req, res) => {
             res.send(`Error getting Tokens: ${error}`);
         });
 });
+
+const setTokenInCookies = (token, res, options) => {
+    res
+    .status(200)
+    .cookie('token', token, options);
+}
 
 app.listen(8080, () =>
     console.log(
